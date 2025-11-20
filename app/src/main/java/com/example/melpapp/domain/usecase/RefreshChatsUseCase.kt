@@ -6,5 +6,6 @@ import javax.inject.Inject
 class RefreshChatsUseCase @Inject constructor(
     private val repository: ChatRepository
 ) {
+    // Passes up the exception thrown by repository.refreshChats()
     suspend operator fun invoke(): Long = repository.refreshChats()
 }

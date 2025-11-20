@@ -135,7 +135,7 @@ fun ChatListScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Connection Error: $msg",
+                        text = "$msg",
                         color = ErrorText,
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
