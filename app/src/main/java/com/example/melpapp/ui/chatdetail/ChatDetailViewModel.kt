@@ -18,10 +18,10 @@ class ChatDetailViewModel @Inject constructor(
 
     private val chatId: Int = savedStateHandle["chatId"] ?: 0
 
-    // 🔥 Local messages added by user (send button)
+
     private val _localMessages = MutableStateFlow<List<Message>>(emptyList())
 
-    // 🔥 Combine usecase messages + local messages
+
     val messages: StateFlow<List<Message>> =
         combine(
             getMessagesUseCase(chatId),
@@ -34,7 +34,7 @@ class ChatDetailViewModel @Inject constructor(
             emptyList()
         )
 
-    // 🔥 Send message → add to local list ONLY
+
     fun sendMessage(text: String) {
         if (text.isBlank()) return
 
