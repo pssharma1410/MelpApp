@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase
     version = 9,
     exportSchema = false
 )
+
 abstract class ChatDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao
     abstract fun messageDao(): MessageDao

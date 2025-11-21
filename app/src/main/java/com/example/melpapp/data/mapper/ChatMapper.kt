@@ -27,31 +27,29 @@ fun generateRealisticTimestamp(): Long {
 
     return when (Random.nextInt(5)) {
 
-        // 0 → Within last few minutes
+
         0 -> now - Random.nextLong(
             1 * 60 * 1000L,
             60 * 60 * 1000L
-        ) // 1 min to 60 min ago
+        )
 
-        // 1 → Within last few hours
+
         1 -> now - Random.nextLong(
             1 * 60 * 60 * 1000L,
             12 * 60 * 60 * 1000L
-        ) // 1–12 hours ago
+        )
 
-        // 2 → Yesterday
+
         2 -> now - Random.nextLong(
             24 * 60 * 60 * 1000L,
             48 * 60 * 60 * 1000L
         )
 
-        // 3 → This week (2–6 days ago)
         3 -> now - Random.nextLong(
             2L * 24L * 60L * 60L * 1000L,
             7L * 24L * 60L * 60L * 1000L
         )
 
-        // 4 → Last week (7–14 days ago)
         else -> now - Random.nextLong(
             7L * 24L * 60L * 60L * 1000L,
             14L * 24L * 60L * 60L * 1000L

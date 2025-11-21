@@ -32,7 +32,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// --- Futuristic/Light Color Palette ---
+
 val LightBackground = Color(0xFFFFFFFF)
 val LightHeader = Color(0xFFF7F7F7)
 val ElectricTeal = Color(0xFF00BFA5)
