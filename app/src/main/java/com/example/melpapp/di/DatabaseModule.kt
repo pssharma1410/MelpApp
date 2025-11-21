@@ -14,7 +14,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
+import java.security.SecureRandom
 import javax.inject.Singleton
+import android.util.Base64
+import androidx.core.content.edit
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -33,15 +36,20 @@ object DatabaseModule {
 
         val prefs = EncryptedSharedPreferences.create(
             context,
-            "secure_prefs",  // name of prefs (String) — FIXED
+            "secure_prefs",
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
 
         val dbPassword = prefs.getString("db_key", null) ?: run {
-            val pass = "Piyush@141001"
-            prefs.edit().putString("db_key", pass).apply()
+
+            val randomBytes = ByteArray(32)
+            SecureRandom().nextBytes(randomBytes)
+
+            val pass = Base64.encodeToString(randomBytes, Base64.NO_WRAP)
+
+            prefs.edit() { putString("db_key", pass) }
             pass
         }
 
