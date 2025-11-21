@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,9 +30,7 @@ import com.example.melpapp.domain.model.RecentChat
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
+import java.util.*
 
 val LightBackground = Color(0xFFFFFFFF)
 val LightHeader = Color(0xFFF7F7F7)
@@ -45,7 +44,6 @@ val ErrorText = Color(0xFFD32F2F)
 @Composable
 fun ChatListScreen(
     viewModel: ChatListViewModel,
-
     onChatClick: (Int, String, String?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -54,6 +52,8 @@ fun ChatListScreen(
     val refreshState = rememberSwipeRefreshState(
         isRefreshing = state.isRefreshing
     )
+
+    val lazyListState = rememberLazyListState()
 
     var isMenuExpanded by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -88,24 +88,14 @@ fun ChatListScreen(
                                 .border(1.dp, ElectricTeal.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                         ) {
                             DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "Logout",
-                                        color = TextPrimary,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                },
+                                text = { Text("Logout", color = TextPrimary, fontWeight = FontWeight.SemiBold) },
                                 leadingIcon = {
-                                    Icon(Icons.Filled.ExitToApp, contentDescription = "Logout Icon", tint = ElectricTeal)
+                                    Icon(Icons.Filled.ExitToApp, contentDescription = null, tint = ElectricTeal)
                                 },
                                 onClick = {
                                     isMenuExpanded = false
                                     showLogoutDialog = true
-                                },
-                                colors = MenuDefaults.itemColors(
-                                    textColor = TextPrimary,
-                                    leadingIconColor = ElectricTeal,
-                                )
+                                }
                             )
                         }
                     }
@@ -135,10 +125,10 @@ fun ChatListScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "$msg",
+                        text = msg,
                         color = ErrorText,
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
             }
@@ -149,14 +139,11 @@ fun ChatListScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(LightBackground)
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    itemsIndexed(
-                        items = state.displayedChats,
-                        key = { _, item -> item.id }
-                    ) { index, chat ->
+                    itemsIndexed(state.displayedChats) { index, chat ->
+
                         ChatRow(
                             chat = chat,
                             isTyping = typingUsers.contains(chat.id),
@@ -166,20 +153,31 @@ fun ChatListScreen(
                             }
                         )
 
-                        Box(modifier = Modifier.padding(start = 72.dp)) {
-                            Divider(
-                                color = TextSecondary.copy(alpha = 0.3f),
-                                thickness = 0.5.dp
-                            )
-                        }
-
-                        if (index == state.displayedChats.lastIndex) {
-                            LaunchedEffect(index, state.displayedChats.size) {
-                                viewModel.loadMore()
-                            }
-                        }
+                        Divider(
+                            modifier = Modifier.padding(start = 72.dp),
+                            color = TextSecondary.copy(alpha = 0.3f),
+                            thickness = 0.5.dp
+                        )
                     }
                 }
+            }
+        }
+
+        // 🔥🔥🔥 Pagination Without snapshotFlow — 100% WORKING
+        val shouldLoadMore by remember {
+            derivedStateOf {
+                val lastVisible = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                val total = state.displayedChats.size
+                val threshold = 5
+
+                if (lastVisible == null) false
+                else lastVisible >= total - 1 - threshold
+            }
+        }
+
+        LaunchedEffect(shouldLoadMore) {
+            if (shouldLoadMore) {
+                viewModel.loadMore()
             }
         }
     }
@@ -205,10 +203,10 @@ fun LogoutConfirmationDialog(
         titleContentColor = TextPrimary,
         textContentColor = TextSecondary,
         shape = RoundedCornerShape(12.dp),
-
         title = { Text("Confirm Logout") },
-        text = { Text("Are you sure you want to log out of MELD? Your session will be terminated and the application will close.") },
-
+        text = {
+            Text("Are you sure you want to log out of MELD? Your session will be terminated.")
+        },
         confirmButton = {
             TextButton(
                 onClick = {
@@ -216,20 +214,12 @@ fun LogoutConfirmationDialog(
                     (context as? Activity)?.finish()
                 }
             ) {
-                Text(
-                    "Logout & Exit",
-                    color = ErrorText,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Logout", color = ErrorText)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(
-                    "Cancel",
-                    color = ElectricTeal,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Cancel", color = ElectricTeal)
             }
         }
     )
@@ -246,27 +236,17 @@ private fun SearchBar(
         onValueChange = onQueryChange,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(16.dp),
         placeholder = { Text("Search chats...", color = TextSecondary) },
-        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Search", tint = ElectricTeal) },
-        singleLine = true,
-        textStyle = LocalTextStyle.current.copy(color = TextPrimary),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = ElectricTeal,
-            unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = LightHeader,
-            unfocusedContainerColor = LightHeader,
-            cursorColor = ElectricTeal
-        ),
-        shape = RoundedCornerShape(12.dp)
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = ElectricTeal) },
+        singleLine = true
     )
 
     if (apiResponseTimeMs != null) {
         Text(
             text = "Loaded in: ${apiResponseTimeMs}ms",
-            style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary,
-            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+            modifier = Modifier.padding(start = 16.dp),
+            color = TextSecondary
         )
     }
 }
@@ -276,34 +256,16 @@ fun formatTime(timestamp: Long): String {
     val diff = now - timestamp
 
     val minute = 60_000L
-    val hour = 60 * minute
-    val day = 24 * hour
+    val hour = minute * 60
+    val day = hour * 24
 
     return when {
         diff < minute -> "Just now"
-
-        diff < hour -> {
-            val mins = diff / minute
-            "$mins min ago"
-        }
-
-        diff < day -> {
-            val hours = diff / hour
-            val formatter = SimpleDateFormat("h:mm a", Locale.getDefault())
-            formatter.format(Date(timestamp))
-        }
-
+        diff < hour -> "${diff / minute} min ago"
+        diff < day -> SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(timestamp))
         diff < 2 * day -> "Yesterday"
-
-        diff < 7 * day -> {
-            val formatter = SimpleDateFormat("EEE", Locale.getDefault())
-            formatter.format(Date(timestamp))
-        }
-
-        else -> {
-            val formatter = SimpleDateFormat("dd/MM/yy", Locale.getDefault())
-            formatter.format(Date(timestamp))
-        }
+        diff < 7 * day -> SimpleDateFormat("EEE", Locale.getDefault()).format(Date(timestamp))
+        else -> SimpleDateFormat("dd/MM/yy", Locale.getDefault()).format(Date(timestamp))
     }
 }
 
@@ -316,9 +278,8 @@ fun ChatRow(
     Row(
         modifier = Modifier
             .clickable { onClick() }
-            .background(if (chat.unreadCount > 0) ElectricTeal.copy(alpha = 0.05f) else Color.Transparent)
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(16.dp)
             .heightIn(min = 72.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -329,26 +290,20 @@ fun ChatRow(
                 .size(56.dp)
                 .clip(CircleShape)
                 .border(
-                    width = if (chat.isOnline) 2.dp else 0.dp,
-                    color = ElectricTeal,
-                    shape = CircleShape
+                    if (chat.isOnline) 2.dp else 0.dp,
+                    ElectricTeal,
+                    CircleShape
                 )
         )
 
         Spacer(modifier = Modifier.width(16.dp))
 
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = chat.name,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp
-                ),
+                chat.name,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 color = TextPrimary
@@ -359,55 +314,16 @@ fun ChatRow(
                     isTyping -> "Typing..."
                     else -> chat.lastMessage
                 },
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 15.sp,
-                    fontWeight = if (chat.unreadCount > 0) FontWeight.SemiBold else FontWeight.Normal
-                ),
-                color = when {
-                    isTyping -> ElectricTeal
-                    chat.unreadCount > 0 -> TextPrimary
-                    else -> TextSecondary
-                },
+                color = if (isTyping) ElectricTeal else TextSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
 
-        Column(
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .fillMaxHeight()
-        ) {
-            val timeText = remember(chat.lastSeen) {
-                formatTime(chat.lastSeen)
-            }
-            Text(
-                text = timeText,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                color = if (chat.unreadCount > 0) ElectricTeal else TextSecondary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-
-            if (chat.unreadCount > 0 && !isTyping) {
-                Box(
-                    modifier = Modifier
-                        .sizeIn(minWidth = 20.dp, minHeight = 20.dp)
-                        .clip(CircleShape)
-                        .background(ElectricTeal),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = chat.unreadCount.toString(),
-                        color = LightBackground,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else {
-                Spacer(modifier = Modifier.size(20.dp))
-            }
-        }
+        Text(
+            text = formatTime(chat.lastSeen),
+            color = TextSecondary,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }

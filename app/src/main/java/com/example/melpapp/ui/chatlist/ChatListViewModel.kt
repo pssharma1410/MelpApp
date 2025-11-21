@@ -21,7 +21,7 @@ class ChatListViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        private const val PAGE_SIZE = 30
+        private const val PAGE_SIZE = 10
         private const val TAG = "ChatListVM"
     }
 
@@ -148,24 +148,36 @@ class ChatListViewModel @Inject constructor(
     }
 
     fun loadMore() {
-        Timber.tag(TAG).d("LOAD_MORE triggered")
+        Timber.tag(TAG).d("LOAD_MORE triggered. Current page: $currentPage")
 
-        val allFiltered = applyPaginationAndFilter(
-            _state.value.allChats.distinctBy { it.id },
-            searchQuery.value
-        )
 
-        if (_state.value.displayedChats.size < allFiltered.size) {
+        val distinctAllChats = _state.value.allChats.distinctBy { it.id }
+
+        val allFilteredChats = if (searchQuery.value.isBlank()) {
+            distinctAllChats
+        } else {
+            distinctAllChats.filter {
+                it.name.contains(searchQuery.value, ignoreCase = true) ||
+                        it.lastMessage.contains(searchQuery.value, ignoreCase = true)
+            }
+        }
+
+        if (_state.value.displayedChats.size < allFilteredChats.size) {
+
             currentPage++
 
+
             val newList = applyPaginationAndFilter(
-                _state.value.allChats.distinctBy { it.id },
+                distinctAllChats,
                 searchQuery.value
             )
 
             logList("DISPLAYED_AFTER_LOAD_MORE", newList)
 
             _state.value = _state.value.copy(displayedChats = newList)
+            Timber.tag(TAG).d("LOAD_MORE successful. New page: $currentPage, Displayed size: ${newList.size}")
+        } else {
+            Timber.tag(TAG).d("LOAD_MORE skipped: All items loaded (Total available: ${allFilteredChats.size})")
         }
     }
 
