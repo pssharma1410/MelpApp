@@ -45,7 +45,7 @@ val ErrorText = Color(0xFFD32F2F)
 @Composable
 fun ChatListScreen(
     viewModel: ChatListViewModel,
-    // onChatClick ab 3 parameters leta hai: id, name, aur avatarUrl
+
     onChatClick: (Int, String, String?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -162,7 +162,6 @@ fun ChatListScreen(
                             isTyping = typingUsers.contains(chat.id),
                             onClick = {
                                 viewModel.markChatAsRead(chat.id)
-                                // Yahan teeno values pass karein
                                 onChatClick(chat.id, chat.name, chat.avatarUrl)
                             }
                         )

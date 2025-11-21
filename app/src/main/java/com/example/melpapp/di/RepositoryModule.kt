@@ -25,4 +25,5 @@ abstract class RepositoryModule {
     abstract fun bindMessageRepo(
         impl: MessageRepositoryImpl
     ):MessageRepository
+
 }
