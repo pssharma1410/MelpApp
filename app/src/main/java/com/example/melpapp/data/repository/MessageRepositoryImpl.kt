@@ -16,7 +16,6 @@ class MessageRepositoryImpl @Inject constructor(
     override fun getMessages(chatId: Int): Flow<List<Message>> =
         dao.getMessages(chatId)
             .onEach { list ->
-                // If no messages exist for this chat → generate some mock messages
                 if (list.isEmpty()) {
                     val fakeMessages = listOf(
                         MessageEntity(

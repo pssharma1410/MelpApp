@@ -48,7 +48,6 @@ class ChatRepositoryImpl @Inject constructor(
             } catch (e: UnknownHostException) {
                 throw IOException("No internet connection")
             } catch (e: IOException) {
-
                 throw IOException("Network error: ${e.message}")
             }
         }
