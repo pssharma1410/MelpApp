@@ -36,9 +36,9 @@ class ChatRepositoryImpl @Inject constructor(
                     users.addAll(response.users)
                 }
 
-                // 👉 FINAL: No 40 copies, no counter, no fake ID generation.
+
                 val entities = users.map { user ->
-                    user.toEntity()   // uses the REAL user.id
+                    user.toEntity()
                 }
 
                 chatDao.upsertChats(entities)
@@ -46,10 +46,9 @@ class ChatRepositoryImpl @Inject constructor(
                 return@withContext duration
 
             } catch (e: UnknownHostException) {
-                // 💡 Catch "Unable to resolve host" and re-throw with the custom message
                 throw IOException("No internet connection")
             } catch (e: IOException) {
-                // Catch other I/O errors and re-throw with a generic message
+
                 throw IOException("Network error: ${e.message}")
             }
         }
